@@ -12,6 +12,8 @@ root.grid_columnconfigure(0, weight=1)
 root.grid_columnconfigure(1, weight=1)
 
 
+
+
 text_editor = Text(root, wrap=WORD)
 text_editor.grid(column=0, columnspan=2, row=0, sticky=NSEW)
 
