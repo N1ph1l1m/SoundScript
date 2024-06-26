@@ -29,16 +29,28 @@ def open_file():
 
 def process_file(filepath, window):
     try:
-        model = whisper.load_model("base")
-        result = model.transcribe(filepath, fp16=False)
-        detected_text = result["text"]
-        print(detected_text)
+        model_type = "medium"
+        language= "ru"
+        model = whisper.load_model(model_type)
+
+        audio = whisper.load_audio(filepath)
+        audio = whisper.pad_or_trim(audio)
+
+        mel = whisper.log_mel_spectrogram(audio).to(model.device)
+
+        _, probs = model.detect_language(mel)
+        result = model.transcribe(filepath, language=language, fp16=False, verbose=True)
+
+        segments = result["segments"]
+        text_with_timestamps = "\n".join([f"[{segment['start']:.2f} - {segment['end']:.2f}] {segment['text']}" for segment in segments])
 
         text_editor.delete("1.0", END)
-        text_editor.insert("1.0", detected_text)
+        text_editor.insert("1.0", text_with_timestamps)
+
+
     except Exception as e:
-        messagebox.showerror("Error", f"An error occurred: {e}")
-        print(e)
+        # messagebox.showerror("Error", f"An error occurred: {e}")
+         print(e)
     finally:
         window.destroy()
 

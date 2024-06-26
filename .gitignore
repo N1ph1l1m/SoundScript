@@ -1,3 +1,6 @@
 main.build
 main.exe
 main.cmd
+build
+myenv
+dist
