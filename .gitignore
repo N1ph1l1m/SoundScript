@@ -4,3 +4,5 @@ main.cmd
 build
 myenv
 dist
+Lib/
+main.spec

@@ -1,37 +1,59 @@
+import asyncio
 from tkinter import *
 from tkinter import ttk, filedialog, messagebox
 import whisper
-
-root = Tk()
-root.title("SoundScript")
-root.geometry("1000x500")
+import threading
 
 
-root.grid_rowconfigure(0, weight=1)
-root.grid_columnconfigure(0, weight=1)
-root.grid_columnconfigure(1, weight=1)
+class Windows(Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Loading...")
+        self.geometry("150x50")
 
+        self.value_var = IntVar()
 
+        self.progressbar = ttk.Progressbar(self, orient="horizontal", variable=self.value_var, mode="indeterminate")
+        self.progressbar.pack(fill=X, padx=6, pady=6)
 
+        self.progressbar.start()
 
-text_editor = Text(root, wrap=WORD)
-text_editor.grid(column=0, columnspan=2, row=0, sticky=NSEW)
+    def button_clicked(self):
+        self.destroy()
 
 def open_file():
     filepath = filedialog.askopenfilename(filetypes=[("Audio files", "*.wav *.mp3 *.flac *.aac *.ogg *.wma")])
     if filepath:
-        try:
-            model = whisper.load_model("base")
-            result = model.transcribe(filepath, fp16=False)
-            text = result["text"]
-            print(text)
+        window = Windows(root)
+        threading.Thread(target=process_file, args=(filepath, window)).start()
 
-            text_editor.delete("1.0", END)
-            text_editor.insert("1.0", text)
-        except Exception as e:
-            messagebox.showerror("Error", f"An error occurred: {e}")
-            print(e)
+def process_file(filepath, window):
+    try:
+        model_type = selected_method.get()
+        print(f"model_type = {model_type} ")
+        language= "ru"
+        model = whisper.load_model(model_type)
 
+        audio = whisper.load_audio(filepath)
+        audio = whisper.pad_or_trim(audio)
+
+        mel = whisper.log_mel_spectrogram(audio).to(model.device)
+
+        _, probs = model.detect_language(mel)
+        result = model.transcribe(filepath, language=language, fp16=False, verbose=True)
+
+        segments = result["segments"]
+        text_with_timestamps = "\n".join([f"[{segment['start']:.2f} - {segment['end']:.2f}] {segment['text']}" for segment in segments])
+
+        text_editor.delete("1.0", END)
+        text_editor.insert("1.0", text_with_timestamps)
+
+
+    except Exception as e:
+        # messagebox.showerror("Error", f"An error occurred: {e}")
+         print(e)
+    finally:
+        window.destroy()
 
 def save_file():
     filepath = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text files", "*.txt")])
@@ -40,6 +62,41 @@ def save_file():
         with open(filepath, "w") as file:
             file.write(text)
 
+
+
+
+
+
+root = Tk()
+root.title("SoundScript")
+root.geometry("1000x500")
+
+frame = ttk.Frame(root, relief=SOLID, width=70,padding=10)
+frame.grid(column=2,row=0,sticky=NE)
+
+methods = ["small","base","medium"]
+
+selected_method = StringVar()
+
+header = ttk.Label(frame,text="Выберите алгоритм")
+header.pack(anchor=N)
+
+
+
+
+for mth in methods:
+        mth_btn = ttk.Radiobutton(frame,text=mth,value=mth,variable=selected_method,)
+        mth_btn.pack(anchor=NW)
+
+
+root.grid_rowconfigure(0, weight=1)
+root.grid_columnconfigure(0, weight=1)
+root.grid_columnconfigure(1, weight=1)
+
+
+
+text_editor = Text(root, wrap=WORD)
+text_editor.grid(column=0, columnspan=2, row=0, sticky=NSEW)
 
 open_button = ttk.Button(root, text="Открыть файл", command=open_file)
 open_button.grid(column=0, row=1, sticky=NSEW, padx=10, pady=10)
