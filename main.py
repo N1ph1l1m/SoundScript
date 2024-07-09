@@ -3,7 +3,7 @@ from tkinter import *
 from tkinter import ttk, filedialog, messagebox
 import whisper
 import threading
-
+import time
 
 class Windows(Toplevel):
     def __init__(self, parent):
@@ -21,39 +21,47 @@ class Windows(Toplevel):
     def button_clicked(self):
         self.destroy()
 
+
 def open_file():
     filepath = filedialog.askopenfilename(filetypes=[("Audio files", "*.wav *.mp3 *.flac *.aac *.ogg *.wma")])
     if filepath:
         window = Windows(root)
         threading.Thread(target=process_file, args=(filepath, window)).start()
 
+
 def process_file(filepath, window):
+    start_time = time.time()  # Начинаем измерение времени
     try:
         model_type = selected_method.get()
-        print(f"model_type = {model_type} ")
-        language= "ru"
+        language = selected_language.get()
+        print(f"model_type = {model_type}  \n language =  {language}")
         model = whisper.load_model(model_type)
 
-        audio = whisper.load_audio(filepath)
-        audio = whisper.pad_or_trim(audio)
-
-        mel = whisper.log_mel_spectrogram(audio).to(model.device)
-
-        _, probs = model.detect_language(mel)
-        result = model.transcribe(filepath, language=language, fp16=False, verbose=True)
+        try:
+            result = model.transcribe(filepath, language=language, fp16=True, verbose=True)
+        except RuntimeError as e:
+            print(f"RuntimeError during transcription: {e}")
+            return
 
         segments = result["segments"]
-        text_with_timestamps = "\n".join([f"[{segment['start']:.2f} - {segment['end']:.2f}] {segment['text']}" for segment in segments])
+        text_with_timestamps = "\n".join([f"[{segment['start']:.3f} - {segment['end']:.3f}] {segment['text']}" for segment in segments])
 
         text_editor.delete("1.0", END)
         text_editor.insert("1.0", text_with_timestamps)
 
-
     except Exception as e:
-        # messagebox.showerror("Error", f"An error occurred: {e}")
-         print(e)
+        print(f"An error occurred: {e}")
+
     finally:
         window.destroy()
+        end_time = time.time()
+
+        elapsed_time = end_time - start_time
+        minutes = int(elapsed_time // 60)
+        seconds = elapsed_time % 60
+
+        messagebox.showinfo("Время обработки", f"Обработка файла заняла {minutes} минут {seconds:.1f} секунд")
+
 
 def save_file():
     filepath = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text files", "*.txt")])
@@ -62,38 +70,57 @@ def save_file():
         with open(filepath, "w") as file:
             file.write(text)
 
-
-
-
-
-
 root = Tk()
 root.title("SoundScript")
-root.geometry("1000x500")
+root.geometry("1000x550")
 
-frame = ttk.Frame(root, relief=SOLID, width=70,padding=10)
-frame.grid(column=2,row=0,sticky=NE)
+frame = ttk.Frame(root, width=170)
+frame.grid(column=2, row=0, sticky=NE)
 
-methods = ["small","base","medium"]
+frame2 = ttk.Frame(root, width=70)
+frame2.grid(column=2, row=0, sticky=NE,pady=150)
 
-selected_method = StringVar()
+methods = [
+    {"name": "small", "display": "Малый"},
+    {"name": "base", "display": "Базовый"},
+    {"name": "medium", "display": "Средний"},
+    {"name": "large", "display": "Большой"},
+    {"name": "large-v2", "display": "Большой-V2"},
+    {"name": "large-v3", "display": "Большой-V3"},
+]
 
-header = ttk.Label(frame,text="Выберите алгоритм")
+languages = [
+    {"code": "ru", "name": "Russian", "display": "Русский"},
+    {"code": "en", "name": "English", "display": "Английский"},
+    {"code": "uk", "name": "Ukrainian", "display": "Украинский"},
+    {"code": "bg", "name": "Bulgarian", "display": "Болгарский"},
+    {"code": "it", "name": "Italian", "display": "Итальянский"},
+    {"code": "ro", "name": "Romanian", "display": "Румынский"},
+    {"code": "tr", "name": "Turkish", "display": "Турецкий"},
+    {"code": "pl", "name": "Polish", "display": "Польский"}
+]
+
+selected_method = StringVar(value=methods[0]["name"])
+
+header = ttk.Label(frame, text="Выберите алгоритм")
 header.pack(anchor=N)
 
+for method in methods:
+    mth_btn = ttk.Radiobutton(frame, text=method["display"], value=method["name"], variable=selected_method)
+    mth_btn.pack(anchor=NW)
 
+selected_language = StringVar(value=languages[0]["code"])
 
+header_lang = ttk.Label(frame2, text="Выберите язык аудио")
+header_lang.pack(anchor=N)
 
-for mth in methods:
-        mth_btn = ttk.Radiobutton(frame,text=mth,value=mth,variable=selected_method,)
-        mth_btn.pack(anchor=NW)
-
+for lang in languages:
+    lang_btn = ttk.Radiobutton(frame2, text=lang["display"], value=lang["code"], variable=selected_language)
+    lang_btn.pack(anchor=NW)
 
 root.grid_rowconfigure(0, weight=1)
 root.grid_columnconfigure(0, weight=1)
 root.grid_columnconfigure(1, weight=1)
-
-
 
 text_editor = Text(root, wrap=WORD)
 text_editor.grid(column=0, columnspan=2, row=0, sticky=NSEW)
