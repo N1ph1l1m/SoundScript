@@ -5,6 +5,7 @@ import whisper
 import threading
 import time
 
+
 class Windows(Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
@@ -29,31 +30,30 @@ def open_file():
         threading.Thread(target=process_file, args=(filepath, window)).start()
 
 
+def format_time(seconds):
+    minutes = int(seconds // 60)
+    seconds = seconds % 60
+    return f"{minutes}:{seconds:05.2f}"
+
 def process_file(filepath, window):
-    start_time = time.time()  # Начинаем измерение времени
+    start_time = time.time()
     try:
         model_type = selected_method.get()
         language = selected_language.get()
-        print(f"model_type = {model_type}  \n language =  {language}")
         model = whisper.load_model(model_type)
 
         try:
-            result = model.transcribe(filepath, language=language, fp16=True, verbose=True)
+            result = model.transcribe(filepath, language=language, fp16=False, verbose=True)
         except RuntimeError as e:
-            print(f"RuntimeError during transcription: {e}")
+            messagebox.showinfo("Error", f"{e}")
             return
 
         segments = result["segments"]
-        text_with_timestamps = "\n".join([f"[{segment['start']:.3f} - {segment['end']:.3f}] {segment['text']}" for segment in segments])
+        text_with_timestamps = "\n".join([f"[{format_time(segment['start'])} - {format_time(segment['end'])}] {segment['text']}" for segment in segments])
 
         text_editor.delete("1.0", END)
         text_editor.insert("1.0", text_with_timestamps)
 
-    except Exception as e:
-        print(f"An error occurred: {e}")
-
-    finally:
-        window.destroy()
         end_time = time.time()
 
         elapsed_time = end_time - start_time
@@ -62,6 +62,11 @@ def process_file(filepath, window):
 
         messagebox.showinfo("Время обработки", f"Обработка файла заняла {minutes} минут {seconds:.1f} секунд")
 
+    except Exception as e:
+        messagebox.showinfo("Ошибка", f"{e}")
+
+    finally:
+        window.destroy()
 
 def save_file():
     filepath = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text files", "*.txt")])
@@ -70,6 +75,10 @@ def save_file():
         with open(filepath, "w") as file:
             file.write(text)
 
+
+def clear_windows():
+    text_editor.delete("1.0",END)
+
 root = Tk()
 root.title("SoundScript")
 root.geometry("1000x550")
@@ -77,8 +86,11 @@ root.geometry("1000x550")
 frame = ttk.Frame(root, width=170)
 frame.grid(column=2, row=0, sticky=NE)
 
-frame2 = ttk.Frame(root, width=70)
+frame2 = ttk.Frame(root,width=70,height=300)
 frame2.grid(column=2, row=0, sticky=NE,pady=150)
+
+frame3 = ttk.Frame(root,width=270,height=100)
+frame3.grid(column=2,row=0,stic=S)
 
 methods = [
     {"name": "small", "display": "Малый"},
@@ -100,7 +112,7 @@ languages = [
     {"code": "pl", "name": "Polish", "display": "Польский"}
 ]
 
-selected_method = StringVar(value=methods[0]["name"])
+selected_method = StringVar(value=methods[2]["name"])
 
 header = ttk.Label(frame, text="Выберите алгоритм")
 header.pack(anchor=N)
@@ -112,11 +124,16 @@ for method in methods:
 selected_language = StringVar(value=languages[0]["code"])
 
 header_lang = ttk.Label(frame2, text="Выберите язык аудио")
-header_lang.pack(anchor=N)
+header_lang.pack(anchor=S)
+
+
 
 for lang in languages:
     lang_btn = ttk.Radiobutton(frame2, text=lang["display"], value=lang["code"], variable=selected_language)
     lang_btn.pack(anchor=NW)
+
+clear_windows = ttk.Button(frame3,text="Очистить окно",command=clear_windows)
+clear_windows.pack(anchor=CENTER)
 
 root.grid_rowconfigure(0, weight=1)
 root.grid_columnconfigure(0, weight=1)
