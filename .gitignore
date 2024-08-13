@@ -6,3 +6,4 @@ myenv
 dist
 Lib/
 main.spec
+.idea
