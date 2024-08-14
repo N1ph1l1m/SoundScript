@@ -49,10 +49,18 @@ def process_file(filepath, window):
             return
 
         segments = result["segments"]
-        text_with_timestamps = "\n".join([f"[{format_time(segment['start'])} - {format_time(segment['end'])}] {segment['text']}" for segment in segments])
+        ## Результат с  временем
+        ##text_with_timestamps = "\n".join([f"[{format_time(segment['start'])} - {format_time(segment['end'])}] {segment['text']}" for segment in segments])
+
+        text_result = "\n".join([f"{segment['text']}" for segment in segments])
 
         text_editor.delete("1.0", END)
-        text_editor.insert("1.0", text_with_timestamps)
+        ## Таймер
+        ##text_editor.insert("1.0", text_with_timestamps)
+
+        text_editor.insert("1.0", text_result)
+
+        ##text_editor.insert("1.0", segment)
 
         end_time = time.time()
 
