@@ -35,6 +35,7 @@ def format_time(seconds):
     seconds = seconds % 60
     return f"{minutes}:{seconds:05.2f}"
 
+
 def process_file(filepath, window):
     start_time = time.time()
     try:
@@ -70,6 +71,7 @@ def process_file(filepath, window):
 
         messagebox.showinfo("Время обработки", f"Обработка файла заняла {minutes} минут {seconds:.1f} секунд")
 
+
     except Exception as e:
         messagebox.showinfo("Ошибка", f"{e}")
 
@@ -83,6 +85,10 @@ def save_file():
         with open(filepath, "w") as file:
             file.write(text)
 
+def copy_text():
+    root.clipboard_clear()
+    root.clipboard_append(text_editor.get("1.0", "end-1c"))
+   #messagebox.showinfo("Информация", "Текст скопирован в буфер обмена")
 
 def clear_windows():
     text_editor.delete("1.0",END)
@@ -90,6 +96,7 @@ def clear_windows():
 root = Tk()
 root.title("SoundScript")
 root.geometry("1000x550")
+
 
 frame = ttk.Frame(root, width=170)
 frame.grid(column=2, row=0, sticky=NE)
@@ -121,6 +128,7 @@ languages = [
 ]
 
 selected_method = StringVar(value=methods[2]["name"])
+
 
 header = ttk.Label(frame, text="Выберите алгоритм")
 header.pack(anchor=N)
@@ -155,5 +163,9 @@ open_button.grid(column=0, row=1, sticky=NSEW, padx=10, pady=10)
 
 save_button = ttk.Button(root, text="Сохранить файл", command=save_file)
 save_button.grid(column=1, row=1, sticky=NSEW, padx=10, pady=10)
+
+save_text = ttk.Button(root, text="Скопировать текст", command=copy_text)
+save_text.grid(column=2, row=1, sticky=NSEW, padx=10, pady=10)
+
 
 root.mainloop()
