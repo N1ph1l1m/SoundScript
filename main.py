@@ -4,7 +4,8 @@ from tkinter import ttk, filedialog, messagebox
 import whisper
 import threading
 import time
-
+import re
+from num2words import num2words
 
 class Windows(Toplevel):
     def __init__(self, parent):
@@ -22,6 +23,21 @@ class Windows(Toplevel):
     def button_clicked(self):
         self.destroy()
 
+
+def replace_numbers_with_words(text):
+    def replace(match):
+        number = int(match.group(0))
+        return num2words(number, lang='ru')
+    return re.sub(r'\b\d+\b',replace,text)
+
+def replace_words(text,replace):
+    for old, new in replace.items():
+        text = text.replace(old,new)
+    return text
+
+word_array  = {
+    'блять':'блядь',
+}
 
 def open_file():
     filepath = filedialog.askopenfilename(filetypes=[("Audio files", "*.wav *.mp3 *.flac *.aac *.ogg *.wma")])
@@ -59,7 +75,14 @@ def process_file(filepath, window):
         ## Таймер
         ##text_editor.insert("1.0", text_with_timestamps)
 
-        text_editor.insert("1.0", text_result)
+        text_update_rep = text_result.replace('Короче', 'блять')
+        replace_num = replace_numbers_with_words(text_update_rep)
+        replace_word = replace_words(replace_num,word_array)
+        text_update = replace_word
+
+        text_editor.insert("1.0", text_update.lower())
+
+
 
         ##text_editor.insert("1.0", segment)
 
