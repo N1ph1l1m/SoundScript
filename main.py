@@ -125,7 +125,7 @@ frame = ttk.Frame(root, width=170)
 frame.grid(column=2, row=0, sticky=NE)
 
 frame2 = ttk.Frame(root,width=70,height=300)
-frame2.grid(column=2, row=0, sticky=NE,pady=150)
+frame2.grid(column=2, row=0, sticky=NE,pady=170)
 
 frame3 = ttk.Frame(root,width=270,height=100)
 frame3.grid(column=2,row=0,stic=S)
@@ -134,6 +134,7 @@ methods = [
     {"name": "small", "display": "Малый"},
     {"name": "base", "display": "Базовый"},
     {"name": "medium", "display": "Средний"},
+    {"name": "turbo", "display": "Турбо"},
     {"name": "large", "display": "Большой"},
     {"name": "large-v2", "display": "Большой-V2"},
     {"name": "large-v3", "display": "Большой-V3"},
